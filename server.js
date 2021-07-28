@@ -69,9 +69,23 @@ const prompt = () => {
 };
 
 const viewAllEmployees = () => {
-  const sql = `SELECT * FROM employee LEFT JOIN roles ON employee.role_id = roles.id`;
+  const sql = `SELECT * FROM employee LEFT JOIN roles ON employee.role_id = roles.id LEFT JOIN department ON roles.department_id = department.id`;
   db.query(sql, function (err, result, fields) {
     if (err) throw err;
     console.table(result);
+    prompt();
   });
 };
+
+const employeeByDepartment = () => {
+  const sql = ``;
+  db.query(sql, function (err, result, fields) {
+    if (err) throw err;
+    console.table(result);
+    prompt
+  });
+};
+
+const viewAllManagers = () => {
+  
+}
