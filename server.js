@@ -31,7 +31,7 @@ const prompt = () => {
         choices: [
           "View All Employees",
           "View All Employeees by Department",
-          "View All Employees by Manager",
+          "View All Roles",
           "Add Employee",
           "Remove Employee",
           "Update Employee Role",
@@ -49,8 +49,8 @@ const prompt = () => {
           employeeByDepartment();
           break;
 
-        case "View All Employees by Manager":
-          viewAllManagers();
+        case "View All Roles":
+          viewAllRoles();
           break;
 
         case "Add Employee":
@@ -69,7 +69,7 @@ const prompt = () => {
 };
 
 const viewAllEmployees = () => {
-  const sql = `SELECT * FROM employee LEFT JOIN roles ON employee.role_id = roles.id LEFT JOIN department ON roles.department_id = department.id`;
+  const sql = `select emp.first_name, emp.last_name, rl.title, rl.salary, dpt.department_name from employee emp join roles rl join department dpt on emp.role_id = rl.id AND rl.department_id = dpt.id;`;
   db.query(sql, function (err, result, fields) {
     if (err) throw err;
     console.table(result);
@@ -78,14 +78,55 @@ const viewAllEmployees = () => {
 };
 
 const employeeByDepartment = () => {
-  const sql = ``;
+  const sql = `select emp.first_name, emp.last_name, dpt.department_name from employee emp join roles rl join department dpt on emp.role_id = rl.id AND rl.department_id = dpt.id;`;
   db.query(sql, function (err, result, fields) {
     if (err) throw err;
     console.table(result);
-    prompt
+    prompt();
   });
 };
 
-const viewAllManagers = () => {
-  
+const viewAllRoles = () => {
+  const sql = `SELECT rl.title FROM roles rl;`;
+  db.query(sql, function (err, result) {
+    if (err) throw err;
+    console.table(result);
+    prompt();
+  });
+};
+
+function addEmployee() {
+  inquirer
+    .prompt([
+      {
+        name: "firstname",
+        type: "input",
+        message: "Enter their first name",
+      },
+      {
+        name: "lastname",
+        type: "input",
+        message: "Enter their last name",
+      },
+      {
+        name: "role",
+        type: "list",
+        message: "What is their role?",
+        choices: [
+          "Salesperson",
+          "Lead Engineer",
+          "Engineer",
+          "Accountant",
+          "Lawyer",
+          "CEO",
+        ],
+      },
+      {
+        name: "choices",
+        type: "list",
+        message: "What their managers name?",
+        choices: ["Moe Mint", "Ellie Goulding", "NULL"],
+      },
+    ])
+    .then(function (van) {});
 }
