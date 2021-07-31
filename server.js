@@ -1,4 +1,4 @@
-const mysql = require("mysql");
+const mysql = require("mysql2");
 const inquirer = require("inquirer");
 const constTable = require("console.table");
 
@@ -69,7 +69,7 @@ const prompt = () => {
 };
 
 const viewAllEmployees = () => {
-  const sql = `select emp.first_name, emp.last_name, rl.title, rl.salary, dpt.department_name from employee emp join roles rl join department dpt on emp.role_id = rl.id AND rl.department_id = dpt.id;`;
+  const sql = `select emp.first_name, emp.last_name, rl.title, rl.salary, dpt.department_name, CONCAT(mng.first_name, CONCAT (' ', mng.last_name)) AS manager from employee emp join employee mng join roles rl join department dpt on emp.manager_id = mng.id and emp.role_id = rl.id AND rl.department_id = dpt.id;`;
   db.query(sql, function (err, result, fields) {
     if (err) throw err;
     console.table(result);
@@ -95,38 +95,96 @@ const viewAllRoles = () => {
   });
 };
 
+const getAllManagers = () => {
+  const sql = `SELECT CONCAT(first_name, CONCAT(' ', last_name)) as full_name FROM Employee order by first_name, last_name asc`;
+  return db
+    .promise()
+    .query(sql)
+    .then(([rows, fields]) => {
+      let managers = [];
+      for (var i in rows) managers.push(rows[i].full_name);
+      return managers;
+    });
+};
+
 function addEmployee() {
-  inquirer
-    .prompt([
-      {
-        name: "firstname",
-        type: "input",
-        message: "Enter their first name",
-      },
-      {
-        name: "lastname",
-        type: "input",
-        message: "Enter their last name",
-      },
-      {
-        name: "role",
-        type: "list",
-        message: "What is their role?",
-        choices: [
-          "Salesperson",
-          "Lead Engineer",
-          "Engineer",
-          "Accountant",
-          "Lawyer",
-          "CEO",
-        ],
-      },
-      {
-        name: "choices",
-        type: "list",
-        message: "What their managers name?",
-        choices: ["Moe Mint", "Ellie Goulding", "NULL"],
-      },
-    ])
-    .then(function (van) {});
+  getAllManagers().then((managers) => {
+    inquirer
+      .prompt([
+        {
+          name: "firstname",
+          type: "input",
+          message: "Enter their first name",
+          validate: (addFirstName) => {
+            if (addFirstName) {
+              return true;
+            } else {
+              console.log("Please enter a first name");
+              return false;
+            }
+          },
+        },
+        {
+          name: "lastname",
+          type: "input",
+          message: "Enter their last name",
+          validate: (addLastName) => {
+            if (addLastName) {
+              return true;
+            } else {
+              console.log("Please enter a last name");
+              return false;
+            }
+          },
+        },
+        {
+          name: "role",
+          type: "list",
+          message: "What is their role?",
+          choices: [
+            "Salesperson",
+            "Lead Engineer",
+            "Engineer",
+            "Accountant",
+            "Lawyer",
+            "CEO",
+          ],
+        },
+        {
+          name: "manager",
+          type: "list",
+          message: "What their managers name?",
+          choices: managers,
+        },
+      ])
+      .then((val) => {
+        let roleIdPromise = db
+          .promise()
+          .query(`SELECT id FROM roles WHERE title = '${val.role}'`)
+          .then(([rows, fields]) => {
+            return rows[0].id;
+          });
+          // let managerIdPromise = db
+          // .promise()
+          // .query(`SELECT id FROM employee where `)
+        roleIdPromise.then((roleId) => {
+          const sql = `INSERT INTO employee SET ?`;
+          db.query(
+            sql,
+            {
+              first_name: val.firstname,
+              last_name: val.lastname,
+              role_id: roleId,
+              //manager_id: val.manager,
+            },
+            function (err) {
+              if (err) throw err;
+              //console.table(val);
+
+              //prompt();
+            }
+          );
+        });
+      });
+  });
 }
